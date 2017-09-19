@@ -1,0 +1,25 @@
+STRIPPER = ./removecomments.pl
+EMCC    =       ~/Extern/emscripten/emscripten/emcc -Wc++14-extensions -std=c++14
+SET     = -s ALLOW_MEMORY_GROWTH=1 -s ASM_JS=0
+
+all:	le_build bar.js bar-optimized.js
+
+le_build:
+	mkdir ./le_build
+
+bar-opt.js: bar.js
+        closure --language_in=ECMASCRIPT5  --js $< --warning_level QUIET > $@ && cp ./$@ ./data/
+bar.js: main.js LAbar2.js cplusplusfoo-stripped.js
+        cat LAbar2.js PerfCount.js cplusplusfoo-stripped.js main.js > $@ && cp ./$@ ./data/ && cp ./$@ ./data/
+cplusplusfoo.js: cplusplusfoo.cpp cplusplusfoo.sym le_space.h
+        $(EMCC) $(OPT) $<  -o $@ -s EXPORTED_FUNCTIONS=$(shell cat cplusplusfoo.sym) $(SET)
+cplusplusfoo-stripped.js: cplusplusfoo.js
+        $(STRIPPER) cplusplusfoo.js > $@
+cplusplusfoo.sym: cplusplusfoo.cpp
+        symbols=\"[`awk '$$1 ~/EMCEXPORT/{sub(/\(.*/,"");printf "\x27_"$$3"\x27,"}' $<`]\";echo $$symbols > cplusplusfoo.sym; echo "Functions to export: " $$symbols;
+
+
+
+
+
+
